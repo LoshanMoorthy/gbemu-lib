@@ -1,0 +1,195 @@
+#include "cartridge_info.h"
+#include "log.h"
+
+std::unique_ptr<CartridgeInfo> get_info(std::vector<u8> rom) {
+    std::unique_ptr<CartridgeInfo> info = std::make_unique<CartridgeInfo>();
+
+    u8 type_code     = rom[header::cartridge_type];
+    u8 version_code  = rom[header::version_number];
+    u8 rom_size_code = rom[header::rom_size];
+    u8 ram_size_code = rom[header::ram_size];
+
+    info->type       = get_type(type_code);
+    info->version    = version_code;
+    info->rom_size   = get_rom_size(rom_size_code);
+    info->ram_size   = get_ram_size(ram_size_code);
+    info->title      = get_title(rom);
+
+    log_info("Title:      '%s' (version %d)", info->title.c_str(), info->version);
+    log_info("Cartridge:  %s", describe(info->type).c_str());
+    log_info("ROM Size:   %s", describe(info->rom_size).c_str());
+    log_info("RAM Size:   %s", describe(info->ram_size).c_str());
+
+    return info;
+}
+
+CartridgeType get_type(u8 type) {
+    switch (type) {
+        case 0x00:
+        case 0x08:
+        case 0x09:
+            return CartridgeType::ROMOnly;
+
+        case 0x01:
+        case 0x02:
+        case 0x03:
+        case 0xFF:
+            return CartridgeType::MBC1;
+
+        case 0x05:
+        case 0x06:
+            return CartridgeType::MBC2;
+
+        case 0x0F:
+        case 0x10:
+        case 0x11:
+        case 0x12:
+        case 0x13:
+            return CartridgeType::MBC3;
+
+        case 0x15:
+        case 0x16:
+        case 0x17:
+            return CartridgeType::MBC4;
+
+        case 0x19:
+        case 0x1A:
+        case 0x1B:
+        case 0x1C:
+        case 0x1D:
+        case 0x1E:
+            return CartridgeType::MBC5;
+
+        case 0x0B:
+        case 0x0C:
+        case 0x0D:
+        case 0x20:
+        case 0x22:
+        case 0xFC:
+        case 0xFD:
+        case 0xFE:
+            return CartridgeType::Unknown;
+
+        default:
+            log_error("Unknown cartridge type: 0x%X", type);
+            return CartridgeType::Unknown;
+    }
+}
+
+std::string describe(CartridgeType type) {
+    switch (type) {
+        case CartridgeType::ROMOnly: return "ROM Only";
+        case CartridgeType::MBC1:    return "MBC1";
+        case CartridgeType::MBC2:    return "MBC2";
+        case CartridgeType::MBC3:    return "MBC3";
+        case CartridgeType::MBC4:    return "MBC4";
+        case CartridgeType::MBC5:    return "MBC5";
+        case CartridgeType::Unknown: return "Unknown";
+    }
+    // fallback
+    return "Unknown";
+}
+
+// ROM sizes
+ROMSize get_rom_size(u8 size_code) {
+    switch (size_code) {
+        case 0x00: return ROMSize::KB32;
+        case 0x01: return ROMSize::KB64;
+        case 0x02: return ROMSize::KB128;
+        case 0x03: return ROMSize::KB256;
+        case 0x04: return ROMSize::KB512;
+        case 0x05: return ROMSize::MB1;
+        case 0x06: return ROMSize::MB2;
+        case 0x07: return ROMSize::MB4;
+        case 0x52: return ROMSize::MB1p1;
+        case 0x53: return ROMSize::MB1p2;
+        case 0x54: return ROMSize::MB1p5;
+        default:
+            log_error("Unknown ROM size code: 0x%X", size_code);
+            return ROMSize::KB32; // fallback
+    }
+}
+std::string describe(ROMSize size) {
+    switch (size) {
+        case ROMSize::KB32:  return "32KB";
+        case ROMSize::KB64:  return "64KB";
+        case ROMSize::KB128: return "128KB";
+        case ROMSize::KB256: return "256KB";
+        case ROMSize::KB512: return "512KB";
+        case ROMSize::MB1:   return "1MB";
+        case ROMSize::MB2:   return "2MB";
+        case ROMSize::MB4:   return "4MB";
+        case ROMSize::MB1p1: return "1.1MB";
+        case ROMSize::MB1p2: return "1.2MB";
+        case ROMSize::MB1p5: return "1.5MB";
+    }
+    return "Unknown";
+}
+
+// RAM sizes
+RAMSize get_ram_size(u8 size_code) {
+    switch (size_code) {
+        case 0x00: return RAMSize::None;
+        case 0x01: return RAMSize::KB2;
+        case 0x02: return RAMSize::KB8;
+        case 0x03: return RAMSize::KB32;
+        case 0x04: return RAMSize::KB128;
+        case 0x05: return RAMSize::KB64;
+        default:
+            log_error("Unknown RAM size code: 0x%X", size_code);
+            return RAMSize::None;
+    }
+}
+
+uint get_actual_ram_size(RAMSize size) {
+    switch (size) {
+        case RAMSize::None:  return 0x0;
+        case RAMSize::KB2:   return 0x800;
+        case RAMSize::KB8:   return 0x2000;
+        case RAMSize::KB32:  return 0x8000;
+        case RAMSize::KB128: return 0x20000;
+        case RAMSize::KB64:  return 0x10000;
+    }
+}
+
+std::string describe(RAMSize size) {
+    switch (size) {
+        case RAMSize::None:  return "No RAM";
+        case RAMSize::KB2:   return "2KB";
+        case RAMSize::KB8:   return "8KB";
+        case RAMSize::KB32:  return "32KB";
+        case RAMSize::KB128: return "128KB";
+        case RAMSize::KB64:  return "64KB";
+    }
+    return "Unknown";
+}
+
+Destination get_destination(u8 destination)  {
+    switch (destination) {
+        case 0x00: return Destination::Japanese;
+        case 0x01: return Destination::NonJapanese;
+        default:
+            log_error("Unknown destination: %X", destination);
+            return Destination::NonJapanese;
+    }
+}
+
+std::string describe(Destination destination) {
+    switch (destination) {
+        case Destination::Japanese:    return "Japanese";
+        case Destination::NonJapanese: return "Non-Japanese";
+    }
+}
+
+std::string get_title(std::vector<u8>& rom) {
+    char name[TITLE_LENGTH] = {0};
+
+    for (u8 i = 0; i < TITLE_LENGTH; i++) {
+        name[i] = static_cast<char>(rom[header::title + i]);
+    }
+
+    std::string raw(name);
+    while (!raw.empty() && (raw.back() == ' ' || raw.back() == '\0'))
+        raw.pop_back();
+    return raw;
+}
