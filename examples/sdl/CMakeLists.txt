@@ -6,4 +6,5 @@ target_link_libraries(gbemu-sdl
     PRIVATE
         gbemu
         SDL2::SDL2
+        SDL2::SDL2main
 )
