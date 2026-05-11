@@ -58,6 +58,34 @@ Error GameBoy::load_rom(const std::string& path) {
         options.disable_logs = !impl->config.enable_logging;
 
         impl->core = std::make_unique<Gameboy>(rom_data, options);
+
+        impl->core->mmu.on_read_cb = [this](uint16_t addr, uint8_t val) {
+            if (impl->memory_read_cb) impl->memory_read_cb(addr, val);
+        };
+
+        impl->core->mmu.on_write_cb = [this](uint16_t addr, uint8_t val) {
+            if (impl->memory_write_cb) impl->memory_write_cb(addr, val);
+        };
+
+        impl->core->cpu.on_instruction_cb = [this](uint16_t pc, uint8_t opcode, CPU::CpuSnapshot snap) {
+            if (impl->instruction_cb) {
+                gbemu::Registers regs{
+                    snap.a, snap.b, snap.c, snap.d,
+                    snap.e, snap.h, snap.l, snap.f,
+                    snap.sp, snap.pc
+                };
+                impl->instruction_cb(pc, opcode, regs);
+            }
+        };
+
+        impl->core->video.on_scanline_cb = [this](int line, const uint32_t* pixels) {
+            if (impl->scanline_cb) impl->scanline_cb(line, pixels);
+        };
+
+        impl->core->mmu.on_serial_cb = [this](uint8_t byte) {
+            if (impl->serial_cb) impl->serial_cb(byte);
+        };
+
         impl->loaded = true;
         impl->log(LogLevel::Info, "ROM loaded: " + path);
         return Error::None;

@@ -54,6 +54,8 @@ public:
     // Accessor for the final rendered FrameBuffer
     const FrameBuffer& get_framebuffer() const { return buffer; }
 
+    std::function<void(int, const uint32_t*)> on_scanline_cb;
+
 private:
     void draw();
     void write_scanline(u8 current_line);

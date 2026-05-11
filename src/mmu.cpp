@@ -18,44 +18,31 @@ MMU::MMU(Cartridge& inCartridge, CPU& inCPU, Video& inVideo, Joypad& inJoypad, T
 u8 MMU::read(const Address& address) const {
     u16 addr = address.value();
 
-    if (addr == 0xFF04) return timer.read_div();
-    if (addr == 0xFF05) return timer.read_tima();
-    if (addr == 0xFF06) return timer.read_tma();
-    if (addr == 0xFF07) return timer.read_tac();
+    u8 value = 0xFF;
 
-    if (addr < 0x8000) {
-        return cartridge.read(address);
-    }
-    if (addr < 0xA000) {
-        return memory_read(address);
-    }
-    if (addr < 0xC000) {
-        return memory_read(address);
-    }
-    if (addr < 0xE000) {
-        return memory_read(address);
-    }
-    if (addr < 0xFE00) {
-        return memory_read(Address(addr - 0x2000));
-    }
-    if (addr < 0xFEA0) {
-        return memory_read(address);
-    }
-    if (addr < 0xFF00) {
-        return 0xFF;
-    }
-    if (addr < 0xFF80) {
-        return read_io(address);
-    }
-    if (addr < 0xFFFF) {
-        return memory_read(address);
-    }
-    // 0xFFFF = Interrupt Enable register
-    return cpu.interrupt_enabled.value();
+    if (addr == 0xFF04) value = timer.read_div();
+    else if (addr == 0xFF05) value = timer.read_tima();
+    else if (addr == 0xFF06) value = timer.read_tma();
+    else if (addr == 0xFF07) value = timer.read_tac();
+    else if (addr < 0x8000)  value = cartridge.read(address);
+    else if (addr < 0xA000)  value = memory_read(address);
+    else if (addr < 0xC000)  value = memory_read(address);
+    else if (addr < 0xE000)  value = memory_read(address);
+    else if (addr < 0xFE00)  value = memory_read(Address(addr - 0x2000));
+    else if (addr < 0xFEA0)  value = memory_read(address);
+    else if (addr < 0xFF00)  value = 0xFF;
+    else if (addr < 0xFF80)  value = read_io(address);
+    else if (addr < 0xFFFF)  value = memory_read(address);
+    else                     value = cpu.interrupt_enabled.value();
+
+    if (on_read_cb) on_read_cb(addr, value);
+    return value;
 }
 
 void MMU::write(const Address& address, u8 byte) {
     u16 addr = address.value();
+
+    if (on_write_cb) on_write_cb(addr, byte);
 
     if (addr < 0x8000) {
         cartridge.write(address, byte);
@@ -192,6 +179,22 @@ void MMU::write_io(const Address& address, u8 byte) {
         case 0xFF4A: video.window_y.set(byte); break;
         case 0xFF4B: video.window_x.set(byte); break;
         }
+        return;
+    }
+
+    // Serial
+    if (addr == 0xFF01) {
+        memory_write(address, byte); // store the data byte
+        return;
+    }
+
+    if (addr == 0xFF02) {
+        // bit 7 = transfer start, bit 0 = clock select
+        if (byte == 0x81) {
+            u8 data = memory_read(Address(0xFF01));
+            if (on_serial_cb) on_serial_cb(data);
+        }
+        memory_write(address, byte);
         return;
     }
 

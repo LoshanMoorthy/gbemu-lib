@@ -101,15 +101,25 @@ bool Video::sprites_enabled() const { return check_bit(lcd_control.value(), 1); 
 bool Video::bg_enabled() const { return check_bit(lcd_control.value(), 0); }
 
 void Video::write_scanline(u8 current_line) {
-    if (!display_enabled()) {
-        return;
-    }
+    if (!display_enabled()) return;
 
-    if (bg_enabled()) {
-        draw_bg_line(current_line);
-    }
-    if (window_enabled()) {
-        draw_window_line(current_line);
+    if (bg_enabled()) draw_bg_line(current_line);
+    if (window_enabled()) draw_window_line(current_line);
+
+    // Fire scanline hook
+    if (on_scanline_cb) {
+        static std::vector<uint32_t> scanline_pixels(GAMEBOY_WIDTH);
+        for (uint x = 0; x < GAMEBOY_WIDTH; x++) {
+            Color c = buffer.get_pixel(x, current_line);
+            switch (c) {
+            case Color::White:     scanline_pixels[x] = 0xFF9BBC0F; break;
+            case Color::LightGray: scanline_pixels[x] = 0xFF8BAC0F; break;
+            case Color::DarkGray:  scanline_pixels[x] = 0xFF306230; break;
+            case Color::Black:     scanline_pixels[x] = 0xFF0F380F; break;
+            default:               scanline_pixels[x] = 0xFF9BBC0F; break;
+            }
+        }
+        on_scanline_cb(current_line, scanline_pixels.data());
     }
 }
 

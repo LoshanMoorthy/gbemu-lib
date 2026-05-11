@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 
 #include "definitions.h"
 #include "register.h"
@@ -59,6 +60,13 @@ public:
     */
     ByteRegister interrupt_flag;
     ByteRegister interrupt_enabled;
+
+    // Optional hook - set by gbemu::GameBoy
+    struct CpuSnapshot {
+        uint8_t  a, b, c, d, e, h, l, f;
+        uint16_t sp, pc;
+    };
+    std::function<void(uint16_t, uint8_t, CpuSnapshot)> on_instruction_cb;
 
 private:
     // Core internal methods

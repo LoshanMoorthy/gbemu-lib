@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <functional>
 
 #include "definitions.h"
 #include "cartridge.h"
@@ -46,4 +47,10 @@ private:
 	Gameboy& gameboy;
 
 	std::vector<u8> memory;
+
+public:
+	// Optional hooks - set by gbemu::GameBoy
+	std::function<void(uint16_t, uint8_t)> on_read_cb;
+	std::function<void(uint16_t, uint8_t)> on_write_cb;
+	std::function<void(uint8_t)> on_serial_cb;
 };

@@ -50,7 +50,16 @@ Cycles CPU::tick() {
 		ei_pending = false;
 		interrupts_enabled = true;
 	}
-	
+
+	if (on_instruction_cb) {
+		CpuSnapshot snap{
+			a.value(), b.value(), c.value(), d.value(),
+			e.value(), h.value(), l.value(), f.value(),
+			sp.value(), pc.value()
+		};
+		on_instruction_cb(old_pc, opcode, snap);
+	}
+
 	return result;
 }
 
