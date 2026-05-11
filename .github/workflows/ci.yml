@@ -19,7 +19,7 @@ jobs:
 
       - name: Install Linux dependencies
         if: runner.os == 'Linux'
-        run: sudo apt install -y autoconf autoconf-archive automake libtool
+        run: sudo apt install -y autoconf autoconf-archive automake libtool libltdl-dev
 
       - name: Install vcpkg
         shell: bash
@@ -37,11 +37,11 @@ jobs:
 
       - name: Install dependencies
         shell: bash
-        run: ./vcpkg/vcpkg install catch2 sdl2
+        run: ./vcpkg/vcpkg install catch2
 
       - name: Configure CMake
         shell: bash
-        run: cmake -B build -DCMAKE_TOOLCHAIN_FILE=./vcpkg/scripts/buildsystems/vcpkg.cmake
+        run: cmake -B build -DCMAKE_TOOLCHAIN_FILE=./vcpkg/scripts/buildsystems/vcpkg.cmake -DGBEMU_BUILD_EXAMPLES=OFF
 
       - name: Build
         shell: bash
