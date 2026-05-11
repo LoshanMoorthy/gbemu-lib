@@ -27,3 +27,8 @@ option(GBEMU_BUILD_EXAMPLES "Build examples" ON)
 if(GBEMU_BUILD_EXAMPLES)
     add_subdirectory(examples/sdl)
 endif()
+
+option(GBEMU_BUILD_TESTS "Build tests" ON)
+if(GBEMU_BUILD_TESTS)
+    add_subdirectory(tests)
+endif()

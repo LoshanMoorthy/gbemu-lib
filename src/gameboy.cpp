@@ -1,6 +1,6 @@
 #include "gameboy/gameboy.h"
 #include "gameboy.h"
-#include "cartridge.h";
+#include "cartridge.h"
 #include "files.h"
 
 #include <fstream>
@@ -64,6 +64,10 @@ Error GameBoy::load_rom(const std::string& path) {
     }
     catch (const std::exception& e) {
         impl->log(LogLevel::Error, std::string("Failed to load ROM: ") + e.what());
+        return Error::InvalidROM;
+    }
+    catch (...) {
+        impl->log(LogLevel::Error, "Unknown exception during load");
         return Error::InvalidROM;
     }
 }
