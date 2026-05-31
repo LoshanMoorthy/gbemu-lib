@@ -3,14 +3,18 @@
 A Game Boy emulator core written in C++, packaged as a library.
  
 Built out of curiosity and the challenge of figuring out how the original hardware actually works at a low level — cycle timing, memory banking, pixel rendering.
- 
-If you want to build a Game Boy frontend, a debugger, a TAS tool, or just mess around with emulation without spending months on opcodes - this is for you.
+
+![Tetris running through gbemu-lib](Animation.gif)
+
+> Don’t mind my terrible Tetris gameplay - the emulator is doing its best.
+
+If you want to build a frontend, debugger, TAS tool, or other Game Boy-related project without starting from hundreds of opcodes and hardware registers, the library should give you a decent head start.
  
 ---
  
 ## Games
 
-Tested with Tetris and Zelda: Link's Awakening. Any game using the supported cartridge types should work.
+Tested with Tetris and Zelda: Link's Awakening. Other games using the supported cartridge types will likely work as well, but haven't been tested extensively yet.
 
 **Supported MBC types:** ROM Only, MBC1, MBC3, MBC5 (for now)
  
